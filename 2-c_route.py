@@ -1,35 +1,30 @@
 #!/usr/bin/python3
-
-"""Starts a Flask web application.
-The application listens on 0.0.0.0, port 5000.
-Routes:
-    /: Displays 'Hello HBNB!'.
-    /hbnb: Displays 'HBNB'.
-    /c/<text>: Displays 'C' followed by the value of <text>.
 """
-from flask import Flask
+Fabric script based on the file 1-pack_web_static.py that distributes an
+archive to the web servers
+"""
 
-app = Flask(__name__)
-
-
-@app.route("/", strict_slashes=False)
-def hello_hbnb():
-    """Displays 'Hello HBNB!'."""
-    return "Hello HBNB!"
+from fabric.api import put, run, env
+from os.path import exists
+env.hosts = ['54.89.109.87', '100.25.190.21']
 
 
-@app.route("/hbnb", strict_slashes=False)
-def hbnb():
-    """Displays 'HBNB'."""
-    return "HBNB"
-
-
-@app.route("/c/<text>", strict_slashes=False)
-def c(text):
-    """Displays 'C' followed by the value of <text>."""
-    text = text.replace("_", " ")
-    return "C {}".format(text)
-
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0")
+def do_deploy(archive_path):
+    """distributes an archive to the web servers"""
+    if exists(archive_path) is False:
+        return False
+    try:
+        file_n = archive_path.split("/")[-1]
+        no_ext = file_n.split(".")[0]
+        path = "/data/web_static/releases/"
+        put(archive_path, '/tmp/')
+        run('mkdir -p {}{}/'.format(path, no_ext))
+        run('tar -xzf /tmp/{} -C {}{}/'.format(file_n, path, no_ext))
+        run('rm /tmp/{}'.format(file_n))
+        run('mv {0}{1}/web_static/* {0}{1}/'.format(path, no_ext))
+        run('rm -rf {}{}/web_static'.format(path, no_ext))
+        run('rm -rf /data/web_static/current')
+        run('ln -s {}{}/ /data/web_static/current'.format(path, no_ext))
+        return True
+    except:
+        return False

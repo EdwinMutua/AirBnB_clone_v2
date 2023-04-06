@@ -1,35 +1,23 @@
-#!/usr/bin/env bash
-# Sets up a web server for deployment of web_static.
+#!/usr/bin/python3
+"""
+Fabric script to genereate tgz archive
+execute: fab -f 1-pack_web_static.py do_pack
+"""
 
-sudo apt-get update
-sudo apt-get install -y nginx
+from datetime import datetime
+from fabric.api import *
 
-sudo mkdir -p /data/web_static/releases/test/
-sudo mkdir -p /data/web_static/shared/
-echo "Holberton School" > /data/web_static/releases/test/index.html
-sudo ln -sf /data/web_static/releases/test/ /data/web_static/current
 
-sudo chown -R ubuntu /data/
-sudo chgrp -R ubuntu /data/
+def do_pack():
+    """
+    making an archive on web_static folder
+    """
 
-printf %s "server {
-    listen 80;
-    listen [::]:80 default_server;
-    add_header X-Served-By $HOSTNAME;
-    root   /etc/nginx/html;
-    index  index.html index.htm;
-    location /hbnb_static {
-        alias /data/web_static/current;
-        index index.html index.htm;
-    }
-    location /redirect_me {
-        return 301 https://www.youtube.com/watch?v=QH2-TGUlwu4;
-    }
-    error_page 404 /404.html;
-    location /404 {
-      root /etc/nginx/html;
-      internal;
-    }
-}" > /etc/nginx/sites-available/default
-
-sudo service nginx restart
+    time = datetime.now()
+    archive = 'web_static_' + time.strftime("%Y%m%d%H%M%S") + '.' + 'tgz'
+    local('mkdir -p versions')
+    create = local('tar -cvzf versions/{} web_static'.format(archive))
+    if create is not None:
+        return archive
+    else:
+        return None
